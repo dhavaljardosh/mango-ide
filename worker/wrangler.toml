@@ -1,0 +1,11 @@
+name = "ide-worker"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[[d1_databases]]
+binding = "ide_db"
+database_name = "ide-db"
+database_id = "000e1215-16ca-4893-a7d9-bb40376fcda9"
+
+[vars]
+EXECUTION_URL = "http://127.0.0.1:3001"
