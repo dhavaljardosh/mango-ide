@@ -14,7 +14,7 @@ id = "75a7ae54bc414365954a9848d55aaaea"
 # ─── Local dev ────────────────────────────────────────────────────────────────
 # Uses same Piston VPS as production via Cloudflare Tunnel.
 [vars]
-PISTON_URL = "https://fireplace-palestinian-disclosure-forwarding.trycloudflare.com/api/v2"
+PISTON_URL = "https://scientists-aye-automobiles-plaintiff.trycloudflare.com/api/v2"
 
 # ─── Production ───────────────────────────────────────────────────────────────
 # Deploy with: npx wrangler deploy --env production
@@ -31,4 +31,4 @@ binding = "RATE_LIMIT"
 id = "75a7ae54bc414365954a9848d55aaaea"
 
 [env.production.vars]
-PISTON_URL = "https://fireplace-palestinian-disclosure-forwarding.trycloudflare.com/api/v2"
+PISTON_URL = "https://scientists-aye-automobiles-plaintiff.trycloudflare.com/api/v2"
