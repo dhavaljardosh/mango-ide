@@ -29,6 +29,7 @@ export function IdeShell() {
     return localStorage.getItem("theme") !== "light";
   });
   const workerRef = useRef<Worker | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const currentCode = useMemo(
     () => codeByLanguage[language],
@@ -74,8 +75,28 @@ export function IdeShell() {
     });
   };
 
+  const handleStop = useCallback(() => {
+    // Stop browser worker by terminating and recreating it
+    if (workerRef.current) {
+      workerRef.current.terminate();
+      const worker = new Worker(new URL("../../workers/codeRunner.worker.ts", import.meta.url));
+      worker.onmessage = (event: MessageEvent<RunnerResponse>) => {
+        if (event.data.type === "output") {
+          setOutputLines(event.data.entries.map((e) => e.type === "error" ? `[error] ${e.text}` : e.text));
+        }
+        if (event.data.type === "done") setIsRunning(false);
+      };
+      workerRef.current = worker;
+    }
+    // Abort Piston fetch
+    abortRef.current?.abort();
+    setIsRunning(false);
+    setOutputLines(["[stopped]"]);
+  }, []);
+
   const handleRun = useCallback(async () => {
     if (isRunning) {
+      handleStop();
       return;
     }
 
@@ -90,15 +111,17 @@ export function IdeShell() {
     }
 
     // Server-side execution via Piston
+    const abort = new AbortController();
+    abortRef.current = abort;
     try {
-      const text = await runCodeAPI(language, currentCode);
+      const text = await runCodeAPI(language, currentCode, abort.signal);
       setOutputLines(text.split("\n"));
-    } catch (err) {
-      setOutputLines([`[error] ${err}`]);
+    } catch (err: any) {
+      if (err?.name !== "AbortError") setOutputLines([`[error] ${err}`]);
     }
 
     setIsRunning(false);
-  }, [currentCode, isRunning, language]);
+  }, [currentCode, handleStop, isRunning, language]);
 
   const handleCodeChange = (nextCode: string) => {
     setCodeByLanguage((prev) => ({ ...prev, [language]: nextCode }));

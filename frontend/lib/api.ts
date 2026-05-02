@@ -2,11 +2,12 @@ const WORKER_URL =
   process.env.NEXT_PUBLIC_WORKER_URL ||
   "https://ide-worker-production.dhavaljardosh.workers.dev";
 
-export async function runCodeAPI(language: string, code: string): Promise<string> {
+export async function runCodeAPI(language: string, code: string, signal?: AbortSignal): Promise<string> {
   const res = await fetch(`${WORKER_URL}/run`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ language, code }),
+    signal,
   });
   return res.text();
 }
