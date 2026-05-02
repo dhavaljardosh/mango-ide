@@ -1,19 +1,14 @@
 export async function handleStats(env: any) {
-  const total = await env.DB.prepare(
-    "SELECT COUNT(*) as count FROM events",
-  ).first();
+  const total = await env.ide_db.prepare(
+    "SELECT COUNT(*) as count FROM events WHERE event = 'run_code'",
+  ).first() as { count: number };
 
-  const js = await env.DB.prepare(
-    "SELECT COUNT(*) as count FROM events WHERE language='javascript'",
-  ).first();
-
-  const python = await env.DB.prepare(
-    "SELECT COUNT(*) as count FROM events WHERE language='python'",
-  ).first();
+  const byLanguage = await env.ide_db.prepare(
+    "SELECT language, COUNT(*) as count FROM events WHERE event = 'run_code' GROUP BY language ORDER BY count DESC",
+  ).all() as { results: Array<{ language: string; count: number }> };
 
   return Response.json({
     totalRuns: total.count,
-    jsRuns: js.count,
-    pythonRuns: python.count,
+    byLanguage: byLanguage.results,
   });
 }

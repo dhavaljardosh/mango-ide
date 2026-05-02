@@ -7,5 +7,28 @@ binding = "ide_db"
 database_name = "ide-db"
 database_id = "000e1215-16ca-4893-a7d9-bb40376fcda9"
 
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "75a7ae54bc414365954a9848d55aaaea"
+
+# ─── Local dev ────────────────────────────────────────────────────────────────
+# Uses same Piston VPS as production via Cloudflare Tunnel.
 [vars]
-EXECUTION_URL = "http://127.0.0.1:3001"
+PISTON_URL = "https://fireplace-palestinian-disclosure-forwarding.trycloudflare.com/api/v2"
+
+# ─── Production ───────────────────────────────────────────────────────────────
+# Deploy with: npx wrangler deploy --env production
+# Replace YOUR_VPS_IP with your Hetzner/DigitalOcean server IP.
+[env.production]
+
+[[env.production.d1_databases]]
+binding = "ide_db"
+database_name = "ide-db"
+database_id = "000e1215-16ca-4893-a7d9-bb40376fcda9"
+
+[[env.production.kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "75a7ae54bc414365954a9848d55aaaea"
+
+[env.production.vars]
+PISTON_URL = "https://fireplace-palestinian-disclosure-forwarding.trycloudflare.com/api/v2"

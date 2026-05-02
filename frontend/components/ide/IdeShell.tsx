@@ -6,25 +6,20 @@ import { LanguageSelector } from "./LanguageSelector";
 import { OutputPanel } from "./OutputPanel";
 import { RunButton } from "./RunButton";
 import { ThemeToggle } from "./ThemeToggle";
-
-type Language = "javascript" | "python";
+import { LANGUAGES, LANGUAGE_MAP, DEFAULT_LANGUAGE_ID } from "@/lib/languages";
+import { runCodeAPI } from "@/lib/api";
 
 type RunnerResponse =
   | { type: "output"; entries: Array<{ type: "log" | "error"; text: string }> }
   | { type: "done" };
 
-const defaultCodeByLanguage: Record<Language, string> = {
-  javascript: `const greeting = "Hello from your JS IDE";
-console.log(greeting);
-console.log({ time: new Date().toISOString() });`,
-  python: `print("Python execution is not available in the browser worker yet.")`,
-};
+const defaultCodeByLanguage: Record<string, string> = Object.fromEntries(
+  LANGUAGES.map((l) => [l.id, l.defaultCode])
+);
 
 export function IdeShell() {
-  const [language, setLanguage] = useState<Language>("javascript");
-  const [codeByLanguage, setCodeByLanguage] = useState<
-    Record<Language, string>
-  >(defaultCodeByLanguage);
+  const [language, setLanguage] = useState<string>(DEFAULT_LANGUAGE_ID);
+  const [codeByLanguage, setCodeByLanguage] = useState<Record<string, string>>(defaultCodeByLanguage);
   const [outputLines, setOutputLines] = useState<string[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [isDark, setIsDark] = useState<boolean>(() => {
@@ -87,8 +82,8 @@ export function IdeShell() {
     setOutputLines([]);
     setIsRunning(true);
 
-    // JS → Web Worker
-    if (language === "javascript") {
+    // Browser-side execution (JS web worker)
+    if (LANGUAGE_MAP[language]?.runInBrowser) {
       workerRef.current?.postMessage({
         type: "run",
         code: currentCode,
@@ -96,22 +91,9 @@ export function IdeShell() {
       return;
     }
 
-    // 🐍 Python → Worker API
+    // Server-side execution via Piston
     try {
-      const res = await fetch("http://localhost:8787/run", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          language: "python",
-          code: currentCode,
-        }),
-      });
-
-      const text = await res.text();
-      console.log(text);
-
+      const text = await runCodeAPI(language, currentCode);
       setOutputLines(text.split("\n"));
     } catch (err) {
       setOutputLines([`[error] ${err}`]);
@@ -198,7 +180,7 @@ export function IdeShell() {
         >
           <CodeEditor
             value={currentCode}
-            language={language}
+            language={LANGUAGE_MAP[language]?.monacoLanguage ?? language}
             onChange={handleCodeChange}
             isDark={isDark}
           />

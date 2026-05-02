@@ -1,25 +1,20 @@
 import { runCodeAPI } from "./api";
+import { LANGUAGE_MAP } from "./languages";
 
 export async function runCode(
-  language: string,
+  languageId: string,
   code: string,
-  worker: Worker | null,
-) {
-  if (language === "javascript") {
-    return new Promise((resolve) => {
-      if (!worker) return resolve("Worker not initialized");
+  browserWorker: Worker | null,
+): Promise<void> {
+  const lang = LANGUAGE_MAP[languageId];
+  if (!lang) throw new Error(`Unknown language: ${languageId}`);
 
-      worker.onmessage = (e) => {
-        resolve(e.data);
-      };
-
-      worker.postMessage(code);
-    });
+  if (lang.runInBrowser) {
+    browserWorker?.postMessage({ type: "run", code });
+    return;
   }
 
-  if (language === "python") {
-    return await runCodeAPI(language, code);
-  }
-
-  return "Unsupported language";
+  throw new Error("Use runCodeAPI for non-browser languages");
 }
+
+export { runCodeAPI };
