@@ -36,6 +36,20 @@ export default {
       });
     }
 
+    if (url.pathname === "/log" && request.method === "POST") {
+      try {
+        const body = await request.json() as { language?: string; event?: string };
+        const language = body.language ?? "unknown";
+        const event = body.event ?? "run_code";
+        if (env.ide_db) {
+          await env.ide_db.prepare(
+            "INSERT INTO events (event, language, request_id) VALUES (?, ?, ?)",
+          ).bind(event, language, crypto.randomUUID()).run();
+        }
+      } catch {}
+      return new Response(null, { status: 204, headers: corsHeaders(request) });
+    }
+
     if (url.pathname === "/stats") {
       const res = await handleStats(env);
       return new Response(await res.text(), {

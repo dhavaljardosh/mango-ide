@@ -27,6 +27,14 @@ export async function loadSnippet(id: string): Promise<{ language: string; code:
   return res.json();
 }
 
+export function logEvent(language: string, event = "run_code"): void {
+  fetch(`${WORKER_URL}/log`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ language, event }),
+  }).catch(() => {});
+}
+
 export async function fetchStats(): Promise<{ totalRuns: number; byLanguage: Array<{ language: string; count: number }> }> {
   const res = await fetch(`${WORKER_URL}/stats`);
   return res.json();

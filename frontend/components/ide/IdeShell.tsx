@@ -7,7 +7,7 @@ import { OutputPanel } from "./OutputPanel";
 import { RunButton } from "./RunButton";
 import { ThemeToggle } from "./ThemeToggle";
 import { LANGUAGES, LANGUAGE_MAP, DEFAULT_LANGUAGE_ID } from "@/lib/languages";
-import { runCodeAPI } from "@/lib/api";
+import { runCodeAPI, logEvent } from "@/lib/api";
 
 type RunnerResponse =
   | { type: "output"; entries: Array<{ type: "log" | "error"; text: string }> }
@@ -84,10 +84,8 @@ export function IdeShell() {
 
     // Browser-side execution (JS web worker)
     if (LANGUAGE_MAP[language]?.runInBrowser) {
-      workerRef.current?.postMessage({
-        type: "run",
-        code: currentCode,
-      });
+      workerRef.current?.postMessage({ type: "run", code: currentCode });
+      logEvent(language);
       return;
     }
 
