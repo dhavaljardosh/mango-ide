@@ -5,9 +5,10 @@ import { CodeEditor } from "./CodeEditor";
 import { LanguageSelector } from "./LanguageSelector";
 import { OutputPanel } from "./OutputPanel";
 import { RunButton } from "./RunButton";
+import { ShareButton } from "./ShareButton";
 import { ThemeToggle } from "./ThemeToggle";
 import { LANGUAGES, LANGUAGE_MAP, DEFAULT_LANGUAGE_ID } from "@/lib/languages";
-import { runCodeAPI, logEvent } from "@/lib/api";
+import { runCodeAPI, logEvent, saveSnippet, loadSnippet } from "@/lib/api";
 
 type RunnerResponse =
   | { type: "output"; entries: Array<{ type: "log" | "error"; text: string }> }
@@ -30,6 +31,17 @@ export function IdeShell() {
   });
   const workerRef = useRef<Worker | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  // Load snippet from URL param on mount (?s=<id>)
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("s");
+    if (!id) return;
+    loadSnippet(id).then((snippet) => {
+      if (!snippet) return;
+      if (LANGUAGE_MAP[snippet.language]) setLanguage(snippet.language);
+      setCodeByLanguage((prev) => ({ ...prev, [snippet.language]: snippet.code }));
+    });
+  }, []);
 
   const currentCode = useMemo(
     () => codeByLanguage[language],
@@ -127,6 +139,13 @@ export function IdeShell() {
     setCodeByLanguage((prev) => ({ ...prev, [language]: nextCode }));
   };
 
+  const handleShare = useCallback(async (): Promise<string> => {
+    const id = await saveSnippet(language, currentCode);
+    const url = `${window.location.origin}/?s=${id}`;
+    window.history.replaceState(null, "", `?s=${id}`);
+    return url;
+  }, [language, currentCode]);
+
   useEffect(() => {
     const isTypingInNonEditorField = (target: EventTarget | null) => {
       if (!(target instanceof HTMLElement)) {
@@ -184,6 +203,7 @@ export function IdeShell() {
         </div>
 
         <div className="flex min-w-0 flex-1 items-center justify-end gap-2.5">
+          <ShareButton onShare={handleShare} isDark={isDark} />
           <RunButton onClick={handleRun} isRunning={isRunning} isDark={isDark} />
           <ThemeToggle isDark={isDark} onToggle={toggleTheme} />
         </div>
